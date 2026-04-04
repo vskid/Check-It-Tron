@@ -6,6 +6,7 @@ import asyncio
 
 from agent import run_hype_agent
 
+
 app = FastAPI(
     title="CHECK-IT-TRON API",
     description="Hackathon idea hype score analyzer powered by Browser Use",
