@@ -4,6 +4,7 @@ import re
 from browser_use_sdk.v3 import AsyncBrowserUse
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 # Client auto-reads BROWSER_USE_API_KEY from .env
