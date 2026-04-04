@@ -1,2 +1,2 @@
-# check-it-tron
+# Check-It-Tron
 2026
