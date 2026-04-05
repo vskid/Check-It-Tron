@@ -127,6 +127,7 @@ async def run_hype_agent(idea: str, source_url: str = None) -> dict:
     result = await client.run(task)
 
     raw = result.output or ""
+    print(f"[CHECK-IT-TRON] Raw output: {repr(raw)}")
     print(f"[CHECK-IT-TRON] Raw output length: {len(raw)} chars")
 
     # Strip any accidental markdown fences
