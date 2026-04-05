@@ -110,42 +110,41 @@ Return ONLY a valid JSON object. No markdown, no explanation, no backticks. Just
 
 
 async def run_hype_agent(idea: str, source_url: str = None) -> dict:
-    """
-    Run the Browser Use cloud agent to analyze a hackathon idea.
-
-    Args:
-        idea:       Free-text description of the idea
-        source_url: Optional Devpost URL to extract the idea from
-
-    Returns:
-        Parsed dict with full hype score analysis
-    """
     task = build_task(idea=idea, source_url=source_url)
 
     print(f"[CHECK-IT-TRON] Starting agent for: '{idea or source_url}'")
 
     result = await client.run(task)
 
-raw = result.output
-if isinstance(raw, dict):
-    return raw
+    raw = result.output
+    if isinstance(raw, dict):
+        return raw
 
-raw = str(raw) if raw else ""
-print(f"[CHECK-IT-TRON] Raw output length: {len(raw)} chars")
+    raw = str(raw) if raw else ""
+    print(f"[CHECK-IT-TRON] Raw output length: {len(raw)} chars")
 
-cleaned = re.sub(r"```json|```", "", raw).strip()
-match = re.search(r"\{[\s\S]*\}", cleaned)
-if match:
-    cleaned = match.group(0)
+    cleaned = re.sub(r"```json|```", "", raw).strip()
+    match = re.search(r"\{[\s\S]*\}", cleaned)
+    if match:
+        cleaned = match.group(0)
 
-try:
-    return json.loads(cleaned)
-except json.JSONDecodeError as e:
-    print(f"[CHECK-IT-TRON] JSON parse error: {e}")
-    return {
-        "error": "Agent returned unparseable output",
-        ...
-    }
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print(f"[CHECK-IT-TRON] JSON parse error: {e}")
+        return {
+            "error": "Agent returned unparseable output",
+            "raw": raw,
+            "idea_summary": idea or source_url,
+            "similar_projects": [],
+            "github_repo_count": 0,
+            "trend_signals": {},
+            "hype_score": 0,
+            "verdict": "unknown",
+            "verdict_reason": "Could not parse agent response.",
+            "upgrade_suggestions": [],
+            "monthly_trend": [],
+        }
 
 
 # Quick local test
