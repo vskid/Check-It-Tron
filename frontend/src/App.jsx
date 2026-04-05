@@ -122,4 +122,70 @@ function ResultsView({ data, onReset }) {
             <div style={styles.trendBody}>
               <div style={styles.trendTitle}>{t.title}</div>
               <div style={styles.trendDesc}>{t.desc}</div>
-              <div style={styles.trendTa
+              </div>
+            </div>
+            <span style={styles.trendHeat}>{t.heat}</span>
+          </div>
+        ))}
+      </CreamCard>
+    </div>
+  );
+}
+
+// ── main app ──────────────────────────────────────────────────────────────────
+
+export default function CheckItTron() {
+  const [view, setView] = useState("input");
+  const [idea, setIdea] = useState("");
+  const [result, setResult] = useState(null);
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes sfill { from { width: 0% } }
+        @keyframes fadein { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
+      `}</style>
+      <div style={styles.app}>
+        <div style={styles.masthead}>
+          <div style={styles.logoEmoji}>🇨🇭🇪🇨🇰-🇮🇹-🇹🇷🇴🇳</div>
+          <div style={styles.mastheadSub}>Idea originality scanner</div>
+        </div>
+        <div style={styles.sourcesRow}>
+          <span style={styles.sourcesLabel}>Sources</span>
+          {["GitHub", "Devpost", "Devfolio", "Google"].map((s) => (
+            <SourceTag key={s}>{s}</SourceTag>
+          ))}
+        </div>
+        {view === "input" && (
+          <InputView onScan={(desc) => { setIdea(desc); setView("loading"); }} />
+        )}
+        {view === "loading" && (
+          <LoadingView idea={idea} onDone={(data) => { setResult(data); setView("results"); }} />
+        )}
+        {view === "results" && (
+          <ResultsView data={result} onReset={() => setView("input")} />
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── styles ────────────────────────────────────────────────────────────────────
+
+const NOISE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E")`;
+
+const FONT = "'Bricolage Grotesque', 'Helvetica Neue', Arial, sans-serif";
+const MONO = "'IBM Plex Mono', monospace";
+const BORDER = "2px solid #111";
+const RED = "#c0151a";
+
+const styles = {
+  app: { backgroundColor: "#f0e6d0", backgroundImage: NOISE_BG, backgroundSize: "300px 300px", backgroundRepeat: "repeat", fontFamily: FONT, color: "#111", minHeight: "100vh", padding: "22px 18px 32px" },
+  masthead: { display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 },
+  logoEmoji: { fontSize: 20, letterSpacing: 1, lineHeight: 1, marginBottom: 7 },
+  mastheadSub: { fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 700, color: "#6b6050" },
+  sourcesRow: { display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginBottom: 22, flexWrap: "wrap" },
+  sourcesLabel: { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#6b6050", marginRight: 2 },
+  sourceTag: { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", tex
