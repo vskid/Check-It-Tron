@@ -236,16 +236,23 @@ function LoadingView({ idea, onDone }) {
 }
 
 function ResultsView({ data, onReset }) {
-  const d = data || MOCK;
-  const sc = scoreClass(d.hype_score ?? d.score);
-  const scoreColor = sc === "low" ? "#ffaaaa" : sc === "mid" ? "#ffe0a0" : "#b0ffb0";
-  const badgeBg = sc === "low" ? "#8f0e12" : sc === "mid" ? "#c47a00" : "#1a7a1a";
-  const barGradient =
-    sc === "low"
-      ? "linear-gradient(90deg,#8f0e12,#d93238)"
-      : sc === "mid"
-      ? "linear-gradient(90deg,#c47a00,#e8a020)"
-      : "linear-gradient(90deg,#1a7a1a,#2db52d)";
+  const d = {
+    score: data?.hype_score ?? MOCK.score,
+    confidence: data?.confidence ?? MOCK.confidence,
+    verdict: data?.verdict ?? MOCK.verdict,
+    summary: data?.verdict_reason ?? MOCK.summary,
+    categories: data?.trend_signals ? Object.values(data.trend_signals).filter(Boolean).slice(0, 4) : MOCK.categories,
+    projects: (data?.similar_projects ?? []).map(p => ({
+      source: "Devpost",
+      name: p.name,
+      sim: p.similarity,
+    })),
+    remixes: (data?.upgrade_suggestions ?? []).map(s => ({
+      title: s.title,
+      desc: s.description,
+    })),
+    diff_tips: MOCK.diff_tips,
+  };
 
   return (
     <div style={styles.fadeIn}>
