@@ -2,10 +2,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
-import asyncio
+from hackathon_agent import (
+    extract_hackathon_info,
+    search_similar_projects,
+    compute_raw_signal,
+)
 
 from agent import run_hype_agent
-
 
 app = FastAPI(
     title="CHECK-IT-TRON API",
@@ -24,14 +27,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 # ── Request / Response models ──────────────────────────────────────────────────
-
 class AnalyzeRequest(BaseModel):
     idea: Optional[str] = None   # free-text idea
     url:  Optional[str] = None   # devpost project URL
-
 
 class SimilarProject(BaseModel):
     name:       str
@@ -39,17 +38,14 @@ class SimilarProject(BaseModel):
     url:        str = ""
     similarity: int = 0
 
-
 class TrendSignals(BaseModel):
     most_common_tech:    Optional[str] = None
     recent_submissions:  Optional[int] = None
     peak_activity:       Optional[str] = None
 
-
 class UpgradeSuggestion(BaseModel):
     title:       str
     description: str
-
 
 class AnalyzeResponse(BaseModel):
     idea_summary:         Optional[str]              = None
@@ -63,9 +59,13 @@ class AnalyzeResponse(BaseModel):
     monthly_trend:        List[int]                   = []
     error:                Optional[str]               = None
 
+TREND_MAP = {
+    "HIGH":   "Crowded space — many similar projects exist. Find a unique angle or niche.",
+    "MEDIUM": "Some competition found. Room to differentiate with better UX or a specific use case.",
+    "LOW":    "Very few similar projects found. Potentially novel idea — validate carefully.",
+}
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
-
 @app.get("/")
 def root():
     return {
@@ -78,11 +78,9 @@ def root():
         },
     }
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest):
@@ -99,6 +97,21 @@ async def analyze(req: AnalyzeRequest):
             idea=req.idea or "",
             source_url=req.url or None,
         )
+
+        hackathon_info   = extract_hackathon_info(req.url)
+        similar_projects = search_similar_projects(req.idea)
+        raw_signal       = compute_raw_signal(similar_projects)
+
+        return {
+            "hackathon":       hackathon_info,
+            "similar_projects": similar_projects,
+            "trend_summary":   TREND_MAP[raw_signal],
+            "raw_signal":      raw_signal,
+        }
+    except TimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
