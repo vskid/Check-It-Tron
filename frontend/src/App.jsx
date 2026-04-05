@@ -197,7 +197,7 @@ function LoadingView({ idea, onDone }) {
     tick();
 
     // Real API call
-    fetch("http://localhost:8000/analyze", {
+    fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
