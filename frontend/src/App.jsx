@@ -197,27 +197,29 @@ function LoadingView({ idea, onDone }) {
     tick();
 
     // Real API call
-    fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        doneRef.current = true;
-        setPct(100);
-        setLabelText("Done.");
-        setStepText("");
-        setTimeout(() => onDone(data), 500);
-      })
-      .catch((err) => {
-        console.error("API error:", err);
-        doneRef.current = true;
-        onDone({ error: err.message });
-      });
-
-    return () => { doneRef.current = true; };
-  }, []);
+fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ idea }),
+})
+  .then((res) => {
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    return res.json();
+  })
+  .then((data) => {
+    doneRef.current = true;
+    setPct(100);
+    setLabelText("Done.");
+    setStepText("");
+    setTimeout(() => onDone(data), 500);
+  })
+  .catch((err) => {
+    console.error("API error:", err);
+    doneRef.current = true;
+    setLabelText(`Error: ${err.message}`);
+    setStepText("Please try again.");
+    // Don't call onDone — stay on loading screen with error message
+  });
 
   return (
     <OrangeCard>
