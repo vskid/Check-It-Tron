@@ -122,6 +122,10 @@ function ResultsView({ data, onReset }) {
             <div style={styles.trendBody}>
               <div style={styles.trendTitle}>{t.title}</div>
               <div style={styles.trendDesc}>{t.desc}</div>
+              <div style={styles.trendTags}>
+                {t.tags.map((tag) => (
+                  <span key={tag} style={styles.trendTag}>{tag}</span>
+                ))}
               </div>
             </div>
             <span style={styles.trendHeat}>{t.heat}</span>
