@@ -176,48 +176,44 @@ function InputView({ onScan }) {
 }
 
 function LoadingView({ onDone }) {
-  const [stepIdx, setStepIdx] = useState(0);
   const [pct, setPct] = useState(0);
-  const [labelText, setLabelText] = useState("Initializing...");
-  const [stepText, setStepText] = useState("");
-  const doneRef = useRef(false);
+  const [label, setLabel] = useState("Initializing...");
+  const [stepLabel, setStepLabel] = useState("");
+  const stepRef = useRef(0);
 
   useEffect(() => {
-    let i = 0;
     function next() {
-      if (doneRef.current) return;
+      const i = stepRef.current;
       if (i >= STEPS.length) {
         setPct(100);
-        setLabelText("Done.");
-        setStepText("");
-        setTimeout(() => { if (!doneRef.current) onDone(); }, 500);
+        setLabel("Done.");
+        setStepLabel("");
+        setTimeout(onDone, 500);
         return;
       }
       const s = STEPS[i];
       setPct(s.pct);
-      setLabelText(s.label);
-      setStepText(`Step ${i + 1} of ${STEPS.length}`);
-      i++;
+      setLabel(s.label);
+      setStepLabel(`Step ${i + 1} of ${STEPS.length}`);
+      stepRef.current = i + 1;
       setTimeout(next, 900);
     }
     next();
-    return () => { doneRef.current = true; };
-  }, [onDone]);
+  }, []);
 
   return (
     <OrangeCard>
-      <div style={styles.loadLabel}>{labelText}</div>
+      <div style={styles.loadLabel}>{label}</div>
       <div style={styles.barTrack}>
         <div style={{ ...styles.barFill, width: `${pct}%`, transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }}>
           <div style={styles.barFillShine} />
-          {pct > 0 && <span style={styles.barPct}>{pct}%</span>}
+          <span style={styles.barPct}>{pct}%</span>
         </div>
       </div>
-      <div style={styles.stepLabel}>{stepText}</div>
+      <div style={styles.stepLabel}>{stepLabel}</div>
     </OrangeCard>
   );
 }
-
 function ResultsView({ onReset }) {
   const sc = scoreClass(MOCK.score);
   const scoreColor = sc === "low" ? "#ffaaaa" : sc === "mid" ? "#ffe0a0" : "#b0ffb0";
@@ -432,7 +428,7 @@ const styles = {
   // cream card
   creamCard: { background: "#f5ecdb", border: BORDER, borderRadius: 18, overflow: "hidden", position: "relative", marginBottom: 14 },
   creamCardShine: { position: "absolute", top: 0, left: 0, right: 0, height: "48%", background: "linear-gradient(180deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 100%)", pointerEvents: "none", borderRadius: "18px 18px 0 0", zIndex: 1 },
-  creamCardInner: { padding: 22, position: "relative", zIndex: 2 },
+  creamCardInner: { padding: 22, position: "relative", zIndex: 2, textAlign: "left" },
 
   label: { fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 },
 
@@ -479,16 +475,16 @@ const styles = {
   // remixes / diff tips
   remixRow: { display: "flex", gap: 12, padding: "11px 0" },
   remixNum: { fontFamily: MONO, fontSize: 12, fontWeight: 700, color: RED, minWidth: 22, flexShrink: 0, paddingTop: 1 },
-  remixTitle: { fontSize: 14, fontWeight: 800, marginBottom: 3, letterSpacing: "-0.01em", color: "#111" },
-  remixDesc: { fontSize: 12, lineHeight: 1.55, color: "#5a4e40" },
+  remixTitle: { fontSize: 14, fontWeight: 800, marginBottom: 3, letterSpacing: "-0.01em", color: "#111", textAlign: "left" },
+  remixDesc: { fontSize: 12, lineHeight: 1.55, color: "#5a4e40", textAlign: "left" },
 
   // trending
   trendRow: { display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 0" },
   trendRank: { fontFamily: MONO, fontSize: 11, fontWeight: 700, color: RED, minWidth: 22, flexShrink: 0, paddingTop: 2 },
-  trendBody: { flex: 1, minWidth: 0 },
-  trendTitle: { fontSize: 13, fontWeight: 800, color: "#111", marginBottom: 2, letterSpacing: "-0.01em" },
-  trendDesc: { fontSize: 11, color: "#5a4e40", lineHeight: 1.5 },
-  trendTags: { display: "flex", gap: 5, marginTop: 5, flexWrap: "wrap" },
+  trendBody: { flex: 1, minWidth: 0, textAlign: "left" },
+  trendTitle: { fontSize: 13, fontWeight: 800, color: "#111", marginBottom: 2, letterSpacing: "-0.01em", textAlign: "left" },
+  trendDesc: { fontSize: 11, color: "#5a4e40", lineHeight: 1.5, textAlign: "left" },
+  trendTags: { display: "flex", gap: 5, marginTop: 5, flexWrap: "wrap", justifyContent: "flex-start" },
   trendTag: { fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", border: "1.5px solid #111", padding: "2px 8px", borderRadius: 50, color: "#3a3020" },
   trendHeat: { fontSize: 13, flexShrink: 0, paddingTop: 1, color: "#f5c400", letterSpacing: 1 },
 
