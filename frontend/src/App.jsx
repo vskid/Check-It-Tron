@@ -268,18 +268,6 @@ function ResultsView({ data, onReset }) {
         ))}
       </CreamCard>
 
-      <CreamCard>
-        <Label muted>Differentiation tips</Label>
-        {d.diff_tips.map((tip, i) => (
-          <div key={i} style={{ ...styles.remixRow, borderBottom: i < d.diff_tips.length - 1 ? "1.5px solid rgba(0,0,0,0.08)" : "none" }}>
-            <span style={styles.remixNum}>0{i + 1}</span>
-            <div>
-              <div style={styles.remixTitle}>{tip.title}</div>
-              <div style={styles.remixDesc}>{tip.desc}</div>
-            </div>
-          </div>
-        ))}
-      </CreamCard>
 
       <button
         style={styles.btnReset}
@@ -291,27 +279,7 @@ function ResultsView({ data, onReset }) {
         Check another idea
       </button>
 
-      <CreamCard>
-        <Label muted>
-          ★ Trending ideas{" "}
-          <span style={{ color: "#7a6a58", fontWeight: 400 }}>(last 3-6 months)</span>
-        </Label>
-        {TRENDING.map((t, i) => (
-          <div key={i} style={{ ...styles.trendRow, borderBottom: i < TRENDING.length - 1 ? "1.5px solid rgba(0,0,0,0.08)" : "none" }}>
-            <span style={styles.trendRank}>{String(i + 1).padStart(2, "0")}</span>
-            <div style={styles.trendBody}>
-              <div style={styles.trendTitle}>{t.title}</div>
-              <div style={styles.trendDesc}>{t.desc}</div>
-              <div style={styles.trendTags}>
-                {t.tags.map((tag) => (
-                  <span key={tag} style={styles.trendTag}>{tag}</span>
-                ))}
-              </div>
-            </div>
-            <span style={styles.trendHeat}>{t.heat}</span>
-          </div>
-        ))}
-      </CreamCard>
+      
     </div>
   );
 }
