@@ -95,27 +95,57 @@ async def analyze(req: AnalyzeRequest):
 
     # Run the Browser Use agent
     try:
-        result = await run_hype_agent(
-            idea=req.idea or "",
-            source_url=req.url or None,
-        )
+    result = await run_hype_agent(
+        idea=req.idea or "",
+        source_url=req.url or None,
+    )
 
-        hackathon_info   = extract_hackathon_info(req.url)
-        similar_projects = search_similar_projects(req.idea)
-        raw_signal       = compute_raw_signal(similar_projects)
+    if isinstance(result, dict) and result.get("error") and not result.get("hype_score"):
+        raise HTTPException(status_code=500, detail=result["error"])
 
-        return {
-            "hackathon":       hackathon_info,
-            "similar_projects": similar_projects,
-            "trend_summary":   TREND_MAP[raw_signal],
-            "raw_signal":      raw_signal,
-        }
-    except TimeoutError as e:
-        raise HTTPException(status_code=504, detail=str(e))
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+    raw_suggestions = result.get("upgrade_suggestions", [])
+    normalized = []
+    for i, s in enumerate(raw_suggestions):
+        if isinstance(s, dict):
+            normalized.append(UpgradeSuggestion(
+                title=s.get("title", f"Suggestion {i+1}"),
+                description=s.get("description", str(s)),
+            ))
+        else:
+            normalized.append(UpgradeSuggestion(
+                title=f"Suggestion {i+1}",
+                description=str(s),
+            ))
+
+    raw_projects = result.get("similar_projects", [])
+    projects = []
+    for p in raw_projects:
+        if isinstance(p, dict):
+            projects.append(SimilarProject(
+                name=p.get("name", "Unknown"),
+                event=p.get("event", "unknown"),
+                url=p.get("url", ""),
+                similarity=int(p.get("similarity", 0)),
+            ))
+
+    return AnalyzeResponse(
+        idea_summary=result.get("idea_summary"),
+        similar_projects=projects,
+        github_repo_count=int(result.get("github_repo_count", 0)),
+        trend_signals=result.get("trend_signals", {}),
+        hype_score=min(100, max(0, int(result.get("hype_score", 0)))),
+        verdict=result.get("verdict", "unknown"),
+        verdict_reason=result.get("verdict_reason"),
+        upgrade_suggestions=normalized,
+        monthly_trend=result.get("monthly_trend", []),
+        error=result.get("error"),
+    )
+except TimeoutError as e:
+    raise HTTPException(status_code=504, detail=str(e))
+except RuntimeError as e:
+    raise HTTPException(status_code=500, detail=str(e))
+except Exception as e:
+    raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
     # If agent returned an error key but no score, surface it clearly
     if result.get("error") and not result.get("hype_score"):
