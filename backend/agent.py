@@ -126,35 +126,26 @@ async def run_hype_agent(idea: str, source_url: str = None) -> dict:
 
     result = await client.run(task)
 
-    raw = result.output or ""
-    print(f"[CHECK-IT-TRON] Raw output: {repr(raw)}")
-    print(f"[CHECK-IT-TRON] Raw output length: {len(raw)} chars")
+raw = result.output
+if isinstance(raw, dict):
+    return raw
 
-    # Strip any accidental markdown fences
-    cleaned = re.sub(r"```json|```", "", raw).strip()
+raw = str(raw) if raw else ""
+print(f"[CHECK-IT-TRON] Raw output length: {len(raw)} chars")
 
-    # Extract JSON object if surrounded by other text
-    match = re.search(r"\{[\s\S]*\}", cleaned)
-    if match:
-        cleaned = match.group(0)
+cleaned = re.sub(r"```json|```", "", raw).strip()
+match = re.search(r"\{[\s\S]*\}", cleaned)
+if match:
+    cleaned = match.group(0)
 
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError as e:
-        print(f"[CHECK-IT-TRON] JSON parse error: {e}")
-        return {
-            "error": "Agent returned unparseable output",
-            "raw": raw,
-            "idea_summary": idea or source_url,
-            "similar_projects": [],
-            "github_repo_count": 0,
-            "trend_signals": {},
-            "hype_score": 0,
-            "verdict": "unknown",
-            "verdict_reason": "Could not parse agent response.",
-            "upgrade_suggestions": [],
-            "monthly_trend": [],
-        }
+try:
+    return json.loads(cleaned)
+except json.JSONDecodeError as e:
+    print(f"[CHECK-IT-TRON] JSON parse error: {e}")
+    return {
+        "error": "Agent returned unparseable output",
+        ...
+    }
 
 
 # Quick local test
