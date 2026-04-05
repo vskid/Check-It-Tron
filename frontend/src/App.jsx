@@ -1,3 +1,183 @@
+import { useState, useEffect, useRef } from "react";
+
+const STEPS = [
+  { label: "Scraping GitHub...", pct: 20 },
+  { label: "Scraping Devpost...", pct: 42 },
+  { label: "Scraping Devfolio...", pct: 62 },
+  { label: "Searching Google...", pct: 80 },
+  { label: "Generating report...", pct: 95 },
+];
+
+const MOCK = {
+  score: 73,
+  confidence: 61,
+  verdict: "Moderately original",
+  summary: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  categories: ["AI", "DevTools", "Productivity", "Open Source"],
+  projects: [
+    { source: "GitHub", name: "lorem-ipsum-checker", sim: 82 },
+    { source: "Devpost", name: "IdeaScan Pro", sim: 67 },
+    { source: "Devfolio", name: "originality.io", sim: 61 },
+    { source: "Google", name: "conceptdiff.dev", sim: 54 },
+    { source: "GitHub", name: "hacklens", sim: 48 },
+    { source: "Devpost", name: "BuildRadar", sim: 40 },
+  ],
+  remixes: [
+    { title: "Domain-specific version", desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt." },
+    { title: "Add real-time collaboration", desc: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip." },
+    { title: "Invert the concept", desc: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat." },
+  ],
+  diff_tips: [
+    { title: "Target an underserved niche", desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nisi ut aliquip ex ea commodo consequat." },
+    { title: "Combine with adjacent domain", desc: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla." },
+    { title: "Flip the user relationship", desc: "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim." },
+  ],
+};
+
+const TRENDING = [
+  { title: "AI-powered code review bots", desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.", tags: ["AI", "DevTools"], heat: "★★★" },
+  { title: "Offline-first mobile data sync", desc: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi.", tags: ["Mobile", "Infra"], heat: "★★★" },
+  { title: "LLM prompt marketplaces", desc: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.", tags: ["AI", "Marketplace"], heat: "★★" },
+  { title: "Open-source Notion alternatives", desc: "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.", tags: ["Productivity", "OSS"], heat: "★★" },
+  { title: "Voice-first dev environments", desc: "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.", tags: ["AI", "DX"], heat: "★" },
+  { title: "Real-time multiplayer for solo tools", desc: "Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo.", tags: ["Collab", "UX"], heat: "★" },
+];
+
+function scoreClass(s) {
+  return s < 40 ? "low" : s < 70 ? "mid" : "high";
+}
+
+function OrangeCard({ children }) {
+  return (
+    <div style={styles.orangeCard}>
+      <div style={styles.orangeCardShine} />
+      <div style={styles.orangeCardInner}>{children}</div>
+    </div>
+  );
+}
+
+function CreamCard({ children }) {
+  return (
+    <div style={styles.creamCard}>
+      <div style={styles.creamCardShine} />
+      <div style={styles.creamCardInner}>{children}</div>
+    </div>
+  );
+}
+
+function Label({ children, muted }) {
+  return (
+    <div style={{ ...styles.label, color: muted ? "#4a3f30" : "rgba(255,255,255,0.65)" }}>
+      {children}
+    </div>
+  );
+}
+
+function SourceTag({ children }) {
+  return <span style={styles.sourceTag}>{children}</span>;
+}
+
+function InputView({ onScan }) {
+  const [desc, setDesc] = useState("");
+  const [context, setContext] = useState("");
+
+  return (
+    <OrangeCard>
+      <Label>
+        Hackathon context{" "}
+        <span style={{ fontWeight: 400, letterSpacing: 0, textTransform: "none", fontSize: 10, opacity: 0.5 }}>
+          (optional)
+        </span>
+      </Label>
+      <input
+        style={styles.contextInput}
+        type="text"
+        placeholder="e.g. ETHGlobal — theme: public goods"
+        value={context}
+        onChange={(e) => setContext(e.target.value)}
+      />
+      <Label>Project description</Label>
+      <textarea
+        style={styles.textarea}
+        placeholder="Describe your idea..."
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+      />
+      <button
+        style={styles.btnScan}
+        onClick={() => desc.trim() && onScan(desc, context)}
+        onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+        onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
+        onMouseDown={(e) => (e.currentTarget.style.transform = "translateY(1px)")}
+        onMouseUp={(e) => (e.currentTarget.style.transform = "none")}
+      >
+        <span style={styles.btnScanShine} />
+        Scan idea
+      </button>
+    </OrangeCard>
+  );
+}
+
+function LoadingView({ idea, onDone }) {
+  const [pct, setPct] = useState(0);
+  const [labelText, setLabelText] = useState("Initializing...");
+  const [stepText, setStepText] = useState("");
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    let i = 0;
+    function tick() {
+      if (doneRef.current) return;
+      if (i < STEPS.length) {
+        setPct(STEPS[i].pct);
+        setLabelText(STEPS[i].label);
+        setStepText(`Step ${i + 1} of ${STEPS.length}`);
+        i++;
+        setTimeout(tick, 900);
+      }
+    }
+    tick();
+
+    fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        doneRef.current = true;
+        setPct(100);
+        setLabelText("Done.");
+        setStepText("");
+        setTimeout(() => onDone(data), 500);
+      })
+      .catch((err) => {
+        console.error("API error:", err);
+        doneRef.current = true;
+        setLabelText(`Error: ${err.message}`);
+        setStepText("Please try again.");
+      });
+
+    return () => { doneRef.current = true; };
+  }, []);
+
+  return (
+    <OrangeCard>
+      <div style={styles.loadLabel}>{labelText}</div>
+      <div style={styles.barTrack}>
+        <div style={{ ...styles.barFill, width: `${pct}%`, transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }}>
+          <div style={styles.barFillShine} />
+          {pct > 0 && <span style={styles.barPct}>{pct}%</span>}
+        </div>
+      </div>
+      <div style={styles.stepLabel}>{stepText}</div>
+    </OrangeCard>
+  );
+}
+
 function ResultsView({ data, onReset }) {
   const d = {
     score: data?.hype_score ?? MOCK.score,
@@ -5,14 +185,14 @@ function ResultsView({ data, onReset }) {
     verdict: data?.verdict ?? MOCK.verdict,
     summary: data?.verdict_reason ?? MOCK.summary,
     categories: data?.trend_signals
-      ? Object.values(data.trend_signals).filter(v => v && typeof v === "string").slice(0, 4)
+      ? Object.values(data.trend_signals).filter((v) => v && typeof v === "string").slice(0, 4)
       : MOCK.categories,
-    projects: (data?.similar_projects ?? []).map(p => ({
+    projects: (data?.similar_projects ?? []).map((p) => ({
       source: "Devpost",
       name: p.name,
       sim: p.similarity,
     })),
-    remixes: (data?.upgrade_suggestions ?? []).map(s => ({
+    remixes: (data?.upgrade_suggestions ?? []).map((s) => ({
       title: s.title,
       desc: s.description,
     })),
@@ -136,8 +316,6 @@ function ResultsView({ data, onReset }) {
   );
 }
 
-// ── main app ──────────────────────────────────────────────────────────────────
-
 export default function CheckItTron() {
   const [view, setView] = useState("input");
   const [idea, setIdea] = useState("");
@@ -175,8 +353,6 @@ export default function CheckItTron() {
     </>
   );
 }
-
-// ── styles ────────────────────────────────────────────────────────────────────
 
 const NOISE_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E")`;
 
